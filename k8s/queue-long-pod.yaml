@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.network/frappe_network: "true"
+    io.kompose.service: queue-long
+  name: queue-long
+spec:
+  containers:
+  - args:
+    - bench
+    - worker
+    - --queue
+    - long,default,short
+    image: frappe/erpnext:v15.54.5
+    name: queue-long
+    resources: {}
+    volumeMounts:
+    - mountPath: /home/frappe/frappe-bench/sites
+      name: sites
+    - mountPath: /home/frappe/frappe-bench/logs
+      name: logs
+  restartPolicy: OnFailure
+  volumes:
+  - name: sites
+    persistentVolumeClaim:
+      claimName: sites
+  - name: logs
+    persistentVolumeClaim:
+      claimName: logs
+status: {}

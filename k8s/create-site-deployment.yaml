@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert -f pwd.yml
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: create-site
+  name: create-site
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: create-site
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert -f pwd.yml
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/frappe_network: "true"
+        io.kompose.service: create-site
+    spec:
+      containers:
+      - args:
+        - |
+          wait-for-it -t 120 db:3306; wait-for-it -t 120 redis-cache:6379; wait-for-it -t 120 redis-queue:6379; export start=`date +%s`; until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] && \
+            [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] && \
+            [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]];
+          do
+            echo "Waiting for sites/common_site_config.json to be created";
+            sleep 5;
+            if (( `date +%s`-start > 120 )); then
+              echo "could not find sites/common_site_config.json with required keys";
+              exit 1
+            fi
+          done; echo "sites/common_site_config.json found"; bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=admin --install-app erpnext --set-default frontend;
+        command:
+        - bash
+        - -c
+        image: frappe/erpnext:v15.54.5
+        imagePullPolicy: ""
+        name: create-site
+        resources: {}
+        volumeMounts:
+        - mountPath: /home/frappe/frappe-bench/sites
+          name: sites
+        - mountPath: /home/frappe/frappe-bench/logs
+          name: logs
+      restartPolicy: Never
+      serviceAccountName: ""
+      volumes:
+      - name: sites
+        persistentVolumeClaim:
+          claimName: sites
+      - name: logs
+        persistentVolumeClaim:
+          claimName: logs
+status: {}

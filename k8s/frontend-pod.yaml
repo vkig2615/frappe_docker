@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.network/frappe_network: "true"
+    io.kompose.service: frontend
+  name: frontend
+spec:
+  containers:
+  - args:
+    - nginx-entrypoint.sh
+    env:
+    - name: BACKEND
+      value: backend:8000
+    - name: CLIENT_MAX_BODY_SIZE
+      value: 50m
+    - name: FRAPPE_SITE_NAME_HEADER
+      value: frontend
+    - name: PROXY_READ_TIMEOUT
+      value: "120"
+    - name: SOCKETIO
+      value: websocket:9000
+    - name: UPSTREAM_REAL_IP_ADDRESS
+      value: 127.0.0.1
+    - name: UPSTREAM_REAL_IP_HEADER
+      value: X-Forwarded-For
+    - name: UPSTREAM_REAL_IP_RECURSIVE
+      value: off
+    image: frappe/erpnext:v15.54.5
+    name: frontend
+    ports:
+    - containerPort: 8080
+    resources: {}
+    volumeMounts:
+    - mountPath: /home/frappe/frappe-bench/sites
+      name: sites
+    - mountPath: /home/frappe/frappe-bench/logs
+      name: logs
+  restartPolicy: OnFailure
+  volumes:
+  - name: sites
+    persistentVolumeClaim:
+      claimName: sites
+  - name: logs
+    persistentVolumeClaim:
+      claimName: logs
+status: {}

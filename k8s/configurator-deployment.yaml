@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert -f pwd.yml
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: configurator
+  name: configurator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: configurator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: /snap/kompose/19/kompose-linux-amd64 convert -f pwd.yml
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/frappe_network: "true"
+        io.kompose.service: configurator
+    spec:
+      containers:
+      - args:
+        - |
+          ls -1 apps > sites/apps.txt; bench set-config -g db_host $DB_HOST; bench set-config -gp db_port $DB_PORT; bench set-config -g redis_cache "redis://$REDIS_CACHE"; bench set-config -g redis_queue "redis://$REDIS_QUEUE"; bench set-config -g redis_socketio "redis://$REDIS_QUEUE"; bench set-config -gp socketio_port $SOCKETIO_PORT;
+        command:
+        - bash
+        - -c
+        env:
+        - name: DB_HOST
+          value: db
+        - name: DB_PORT
+          value: "3306"
+        - name: REDIS_CACHE
+          value: redis-cache:6379
+        - name: REDIS_QUEUE
+          value: redis-queue:6379
+        - name: SOCKETIO_PORT
+          value: "9000"
+        image: frappe/erpnext:v15.54.5
+        imagePullPolicy: ""
+        name: configurator
+        resources: {}
+        volumeMounts:
+        - mountPath: /home/frappe/frappe-bench/sites
+          name: sites
+        - mountPath: /home/frappe/frappe-bench/logs
+          name: logs
+      restartPolicy: Never
+      serviceAccountName: ""
+      volumes:
+      - name: sites
+        persistentVolumeClaim:
+          claimName: sites
+      - name: logs
+        persistentVolumeClaim:
+          claimName: logs
+status: {}

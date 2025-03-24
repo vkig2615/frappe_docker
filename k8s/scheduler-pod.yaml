@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.network/frappe_network: "true"
+    io.kompose.service: scheduler
+  name: scheduler
+spec:
+  containers:
+  - args:
+    - bench
+    - schedule
+    image: frappe/erpnext:v15.54.5
+    name: scheduler
+    resources: {}
+    volumeMounts:
+    - mountPath: /home/frappe/frappe-bench/sites
+      name: sites
+    - mountPath: /home/frappe/frappe-bench/logs
+      name: logs
+  restartPolicy: OnFailure
+  volumes:
+  - name: sites
+    persistentVolumeClaim:
+      claimName: sites
+  - name: logs
+    persistentVolumeClaim:
+      claimName: logs
+status: {}

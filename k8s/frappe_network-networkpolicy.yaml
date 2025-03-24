@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  name: frappe_network
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          io.kompose.network/frappe_network: "true"
+  podSelector:
+    matchLabels:
+      io.kompose.network/frappe_network: "true"
